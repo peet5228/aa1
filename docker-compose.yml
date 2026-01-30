@@ -1,0 +1,85 @@
+services:
+  mysql:
+      image: mysql:8.0
+      container_name: MYSQL_CONTAINER
+      command:
+        --character-set-server=utf8mb4
+        --collation-server=utf8mb4_unicode_ci
+      ports:
+        - "3307:3306"    # เปิดพอร์ต MySQL ออกมาหา host
+      restart: always
+      volumes:  
+        - ./database:/docker-entrypoint-initdb.d
+        - mysql_data:/var/lib/mysql
+      environment:
+        MYSQL_ROOT_PASSWORD: 1234
+        MYSQL_DATABASE: test1
+        MYSQL_PASSWORD: 1234
+        TZ: Asia/Bangkok
+      healthcheck:
+        test: ["CMD","mysqladmin","ping","-p1234"]
+        interval: 10s
+        timeout: 5s
+        retries: 10
+      networks: ["app-network"]
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: PMA_Container
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: 1234
+    ports:
+      - "8080:80"
+    restart: always
+    depends_on:
+      - mysql
+    networks: ["app-network"]
+  
+  frontend:
+    build: ./frontend
+    container_name: Frontend_Container
+    depends_on: 
+      - backend
+    environment:
+      NUXT_PUBLIC_API_BASE: http://localhost:3001
+      NITRO_PORT: 3000
+      HOST: 0.0.0.0
+      CHOKIDAR_USEPOLLING: true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: always
+    ports: ["3000:3000"]
+    command: npm run dev -- --host 0.0.0.0
+    networks: ["app-network"]
+  
+  backend:
+    build: ./backend
+    container_name: backend_container
+    env_file:
+      - ./backend/.env
+    ports: ["3001:3001"]
+    restart: always
+    command: npx nodemon -L index.js
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+    environment:
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: 1234
+      DB_DATABASE: test1
+      JWT_SECRET: ntc&&1234
+      CHOKIDAR_USEPOLLING: true
+    networks: ["app-network"]
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
