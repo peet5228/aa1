@@ -30,8 +30,10 @@
 </template>
 
 <script setup lang="ts">
+import axios from 'axios';
 import { computed, ref } from 'vue';
 import {useDisplay} from 'vuetify'
+import {api} from '../API/bast'
 const {mdAndDown} = useDisplay()
 const isMobile = computed(() => mdAndDown.value)
 const drawer = ref(false)
@@ -43,6 +45,32 @@ const logout = async () =>{
   navigateTo('/')
 }
 
+const roles = [
+  //staff
+  {title:'หน้าหลัก',to:'/Staff/',role:'ฝ่ายบุคลากร'},
+
+  //commit
+  {title:'รายชื่อผู้รับการประเมิน',to:'/Committee/',role:'กรรมการประเมิน'},
+
+  //eva
+  {title:'หน้าหลัก',to:'/Evaluatee/',role:'ผู้รับการประเมินผล'},
+]
+const navitem = computed(() => roles.filter((item) => item.role.includes(user.value.role)))
+
+const fetchUser = async () =>{
+  const token = localStorage.getItem('token')
+    if(!token){
+      return await navigateTo('/',{replace:true})
+    }
+  try{
+    const res = await axios.get(`${api}/profile`)
+    user.value = res.data
+  }catch(err){
+    console.error('Error GET User',err)
+    localStorage.getItem('token')
+    await navigateTo('/',{replace:true})
+  }
+}
 </script>
 
 <style scoped>
