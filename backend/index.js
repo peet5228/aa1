@@ -12,11 +12,14 @@ app.use(cors ({
 
 app.use(express.json())
 app.use(fileupload())
-app.use('/uploads'.express.static(path.join('uploads')))
+app.use('/uploads',express.static(path.join('uploads')))
 
 // Plublic Endpoint
-// const auth = require('./routes/auth')
-// app.use('/api/auth',auth)
+const auth = require('./routes/auth')
+app.use('/api/auth',auth)
+
+const profile = require('./routes/profile')
+app.use('/api/profile',profile)
 
 // Staff Endpoint
 
